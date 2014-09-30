@@ -1,0 +1,12 @@
+[submodule "arscons"]
+	path = arscons
+	url = https://github.com/suapapa/arscons.git
+[submodule "libraries/Average"]
+	path = libraries/Average
+	url = https://github.com/majenkotech/Average.git
+[submodule "libraries/EEPROMEx"]
+	path = libraries/EEPROMEx
+	url = https://github.com/infomaniac50/EEPROMEx.git
+[submodule "libraries/ArduinoDevices"]
+	path = libraries/ArduinoDevices
+	url = https://github.com/jonathanchristison/Arduino-Devices.git
