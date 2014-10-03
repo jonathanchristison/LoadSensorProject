@@ -5,7 +5,7 @@ WeightProfile::WeightProfile()
     name_ = 'C';
     weightRangeMin_ = 0;
     weightRangeMax_ = 0;
-    cVal_ = Colour(255,255,255);
+    cVal_ = Colour(255, 255, 255);
 }
 
 WeightProfile::WeightProfile(int min, int max, char name)
@@ -74,16 +74,18 @@ Colour WeightProfile::cVal()
 bool WeightProfile::match(int val)
 {
     if(val > this->minimum() && val < this->maximal())
+    {
         return true;
+    }
     return false;
 }
 
 void WeightProfile::save(byte offset)
 {
-    EEPROM.write(0,offset);
+    EEPROM.write(0, offset);
     offset = offset * sizeof(this);
     Serial.print("Saving WP to: ");
-    Serial.println(offset,DEC);
+    Serial.println(offset, DEC);
     int writtenblocks = EEPROM.writeBlock(offset, this);
     delay(100);
     Serial.print("Blocks written: ");

@@ -6,7 +6,7 @@
 
 class WeightProfile : public Printable
 {
-    public:
+public:
     WeightProfile();
     WeightProfile(int min, int max, char name);
     WeightProfile(int min, int max, char name, Colour colour);
@@ -25,7 +25,7 @@ class WeightProfile : public Printable
     WeightProfile load(byte offset);
     virtual size_t printTo(Print& p) const;
 
-    private:
+private:
     int weightRangeMin_;
     int weightRangeMax_;
     char name_;
