@@ -24,7 +24,11 @@ public:
     void save(byte offset);
     WeightProfile load(byte offset);
     virtual size_t printTo(Print& p) const;
-
+    bool operator < (const WeightProfile& that) const;
+    bool operator <= (const WeightProfile& that) const;
+    bool operator > (const WeightProfile& that) const;
+    bool operator >= (const WeightProfile& that) const;
+    bool operator == (const WeightProfile& that) const;
 private:
     int weightRangeMin_;
     int weightRangeMax_;

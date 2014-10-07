@@ -34,6 +34,14 @@ void setup()
     StartTime.from_millisecs(millis());
 }
 
+
+static int qcmp(const void* a, const void* b)
+{
+    if (*(WeightProfile*)a < *(WeightProfile*)b) return -1;
+    if (*(WeightProfile*)a == *(WeightProfile*)b) return 0;
+    if (*(WeightProfile*)a > *(WeightProfile*)b) return 1;
+}
+
 void serialEvent()
 {
     while(Serial.available())
@@ -50,12 +58,15 @@ void serialEvent()
 bool serialVerify()
 {
     Serial.println(F("Are you sure? yes/no"));
-    while(Serial.available() < 2)
+    while(Serial.available() < 3)
     {
         delay(100);
     }
-
-    return Serial.readString() == "yes\r\n" ? true : false;
+    String answ;
+    answ.reserve(5); 
+    answ = Serial.readString();
+    answ.trim();
+    return answ == "yes" ? true : false;
 }
 
 void Calibrate()
@@ -80,14 +91,16 @@ void Calibrate()
     bed.colour(chosenColour);
     bed.pulse(5);
 
-    //Get a baseline reference
-    Serial.println(F("Getting a no load reference"));
-    sg.resolution(900);
+    sg.resolution(300);
     if(EEPROM.read(0) < 1)
     {
+        //Get a baseline reference
+        Serial.println(F("Getting a no load reference"));
         bed.colour(Colour(0, 255, 0));
         bed.pulse(2);
         WeightProfile empty(0, sg.averageValue(), 'E');
+        Serial.println(F("No load value:"));
+        Serial.println(empty); 
         empty.save(1);
         bed.pulse(2);
     }
@@ -111,6 +124,8 @@ void Calibrate()
 
     cal.maximal(average.maximum());
     cal.minimum(average.minimum());
+    Serial.println(F("Saving:"));
+    Serial.println(cal);
     cal.save(EEPROM.read(0) + 1);
     bed.colour(cal.cVal());
     bed.pulse(10);
@@ -151,11 +166,11 @@ void Show()
     {
         WeightProfile wp;
         wp = wp.load(i + 1);
-        Serial.print(F("--------\t"));
+        Serial.print(F("\n--------\t"));
         Serial.print(i, DEC);
         Serial.println(F("\t--------\n"));
         Serial.print(wp);
-        Serial.print(F("---------------"));
+        Serial.print(F("\n---------------"));
     }
 }
 
@@ -170,21 +185,77 @@ void RealTime()
     const Timing::Duration st = Timing::Duration::from_millisecs(millis());
     const Timing::Duration duration(60,0);
     Colour energyc;
+    int val = sg.averageValue();
+    unsigned short i = 0;
     do
     {
-        energyc.energy(sg.averageValue());
+	energyc = energyc.energy(val);
         bed.colour(energyc);
         bed.instant();
-        delay(100);
-        Serial.println(bed.colour());
-        Serial.flush();
+        delay(1);
+	if (i > 50)
+	{
+		Serial.println(val, DEC); 
+        	Serial.println(bed.colour());
+        	Serial.flush();
+		i = 0;
+	}
+	val = sg.averageValue();
+	i++;
     }
-    while(st - Timing::Duration::from_millisecs(millis()) <= duration);
+    while(st +  duration > Timing::Duration::from_millisecs(millis()));
 }
 
 void Run()
 {
+    WeightProfile wps[20];
+    int wpscnt = EEPROM.read(0);
 
+    bed.colour(Colour(WHITE));
+    bed.pulse(5);
+    Serial.println(F("Loading from EEPROM\n-----------------\n"));
+    for(int i = 0; i < wpscnt; i++)
+    {
+        wps[i] = wps[i].load(i+1);
+        Serial.println(wps[i]);
+        Serial.flush();
+    }
+    //Re arrage list lowest to highest
+    Serial.println(F("Sorting\n-----------------\n"));
+    qsort(wps, wpscnt, sizeof(WeightProfile), qcmp);
+    for(int i = 0; i < wpscnt; i++)
+    {
+        bed.colour(wps[i].cVal());
+	bed.instant();
+	delay(1000);
+	bed.colour(Colour(OFF));
+	bed.instant();
+	Serial.println(wps[i]);
+    }
+
+    sg.resolution(300);
+    sg.delayBetweenReads(Timing::Duration::from_microsecs(150));
+
+    while(true)
+    {
+        int val = sg.averageValue();
+	Serial.println(val, DEC); 
+        for(int i = 0; i < wpscnt; i++)
+        {
+            if(wps[i].match(val) && i > 0)
+            {
+                Serial.println(F("Matches"));
+                Serial.println(wps[i]);
+		Serial.println(F("With Value:\t"));
+		Serial.print(val, DEC);
+                bed.fadeTime(Timing::Duration::from_millisecs(10));
+		bed.colour(wps[i].cVal());
+                bed.fadeIn();
+                delay(Timing::Duration::from_secs(180).to_millisecs());
+                bed.fadeOut();
+            }
+        }
+    }
 }
 
 void Edit()
@@ -218,7 +289,8 @@ void Edit()
     Colour chosenColour;
     chosenColour.hex(Serial.readString());
     wp.cVal(chosenColour);
-
+    bed.colour(chosenColour);
+    bed.instant(); 
     Serial.println(F("Edit field: Name (char)"));
     while(Serial.available() < 1)
     {
@@ -239,11 +311,12 @@ void Edit()
     {
         Serial.println(F("Not saving changes"));
     }
+    bed.colour(Colour(OFF));
+    bed.instant();
 }
 
 void loop()
 {
-
     if(stringComplete)
     {
         if(inputString == "Calibrate\r\n")

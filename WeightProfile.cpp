@@ -73,20 +73,16 @@ Colour WeightProfile::cVal()
 
 bool WeightProfile::match(int val)
 {
-    if(val > this->minimum() && val < this->maximal())
-    {
-        return true;
-    }
-    return false;
+    return val > this->minimum() && val < this->maximal();
 }
 
 void WeightProfile::save(byte offset)
 {
     EEPROM.write(0, offset);
-    offset = offset * sizeof(this);
+    offset = offset * sizeof(WeightProfile);
     Serial.print("Saving WP to: ");
     Serial.println(offset, DEC);
-    int writtenblocks = EEPROM.writeBlock(offset, this);
+    int writtenblocks = EEPROM.writeBlock(offset, *this);
     delay(100);
     Serial.print("Blocks written: ");
     Serial.println(writtenblocks, DEC);
@@ -95,7 +91,7 @@ void WeightProfile::save(byte offset)
 WeightProfile WeightProfile::load(byte offset)
 {
     WeightProfile wp;
-    offset = offset * sizeof(this);
+    offset = offset * sizeof(WeightProfile);
     int rblocks = EEPROM.readBlock(offset, wp);
 #ifdef DEBUG
     Serial.print("Reading offset: ");
@@ -127,3 +123,31 @@ size_t WeightProfile::printTo(Print& p) const
     return n;
 }
 
+bool WeightProfile::operator < (const WeightProfile& that) const
+{
+    return weightRangeMin_ < that.weightRangeMin_
+            && weightRangeMax_ < that.weightRangeMax_;
+}
+
+bool WeightProfile::operator <= (const WeightProfile& that) const
+{
+    return weightRangeMin_ <= that.weightRangeMin_
+            && weightRangeMax_ <= that.weightRangeMax_;
+}
+
+bool WeightProfile::operator > (const WeightProfile& that) const
+{
+    return weightRangeMin_ > that.weightRangeMin_
+            && weightRangeMax_ > that.weightRangeMax_;
+}
+
+bool WeightProfile::operator >= (const WeightProfile& that) const
+{
+    return weightRangeMin_ >= that.weightRangeMin_
+            && weightRangeMax_ >= that.weightRangeMax_;
+}
+bool WeightProfile::operator == (const WeightProfile& that) const
+{
+    return weightRangeMin_  == that.weightRangeMin_
+            && weightRangeMax_ == that.weightRangeMax_;
+}
