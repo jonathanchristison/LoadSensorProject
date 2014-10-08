@@ -37,9 +37,18 @@ void setup()
 
 static int qcmp(const void* a, const void* b)
 {
-    if (*(WeightProfile*)a < *(WeightProfile*)b) return -1;
-    if (*(WeightProfile*)a == *(WeightProfile*)b) return 0;
-    if (*(WeightProfile*)a > *(WeightProfile*)b) return 1;
+    if(*(WeightProfile*)a < * (WeightProfile*)b)
+    {
+        return -1;
+    }
+    if(*(WeightProfile*)a == *(WeightProfile*)b)
+    {
+        return 0;
+    }
+    if(*(WeightProfile*)a > *(WeightProfile*)b)
+    {
+        return 1;
+    }
 }
 
 void serialEvent()
@@ -63,7 +72,7 @@ bool serialVerify()
         delay(100);
     }
     String answ;
-    answ.reserve(5); 
+    answ.reserve(5);
     answ = Serial.readString();
     answ.trim();
     return answ == "yes" ? true : false;
@@ -100,7 +109,7 @@ void Calibrate()
         bed.pulse(2);
         WeightProfile empty(0, sg.averageValue(), 'E');
         Serial.println(F("No load value:"));
-        Serial.println(empty); 
+        Serial.println(empty);
         empty.save(1);
         bed.pulse(2);
     }
@@ -134,11 +143,11 @@ void Calibrate()
 void Reset()
 {
     Serial.println(F("Wiping EEPROM"));
-    if (serialVerify())
+    if(serialVerify())
     {
         Serial.println("Erasing...");
         unsigned long percent = 0;
-        for (int i = 0; i < 512; i++)
+        for(int i = 0; i < 512; i++)
         {
             EEPROM.write(i, 0);
             if(percent != (i * 100UL / 512UL))
@@ -183,25 +192,25 @@ void RealTime()
     sg.delayBetweenReads(Timing::Duration::zero());
 
     const Timing::Duration st = Timing::Duration::from_millisecs(millis());
-    const Timing::Duration duration(60,0);
+    const Timing::Duration duration(60, 0);
     Colour energyc;
     int val = sg.averageValue();
     unsigned short i = 0;
     do
     {
-	energyc = energyc.energy(val);
+        energyc = energyc.energy(val);
         bed.colour(energyc);
         bed.instant();
         delay(1);
-	if (i > 50)
-	{
-		Serial.println(val, DEC); 
-        	Serial.println(bed.colour());
-        	Serial.flush();
-		i = 0;
-	}
-	val = sg.averageValue();
-	i++;
+        if(i > 50)
+        {
+            Serial.println(val, DEC);
+            Serial.println(bed.colour());
+            Serial.flush();
+            i = 0;
+        }
+        val = sg.averageValue();
+        i++;
     }
     while(st +  duration > Timing::Duration::from_millisecs(millis()));
 }
@@ -216,7 +225,7 @@ void Run()
     Serial.println(F("Loading from EEPROM\n-----------------\n"));
     for(int i = 0; i < wpscnt; i++)
     {
-        wps[i] = wps[i].load(i+1);
+        wps[i] = wps[i].load(i + 1);
         Serial.println(wps[i]);
         Serial.flush();
     }
@@ -226,11 +235,11 @@ void Run()
     for(int i = 0; i < wpscnt; i++)
     {
         bed.colour(wps[i].cVal());
-	bed.instant();
-	delay(1000);
-	bed.colour(Colour(OFF));
-	bed.instant();
-	Serial.println(wps[i]);
+        bed.instant();
+        delay(1000);
+        bed.colour(Colour(OFF));
+        bed.instant();
+        Serial.println(wps[i]);
     }
 
     sg.resolution(300);
@@ -239,17 +248,17 @@ void Run()
     while(true)
     {
         int val = sg.averageValue();
-	Serial.println(val, DEC); 
+        Serial.println(val, DEC);
         for(int i = 0; i < wpscnt; i++)
         {
             if(wps[i].match(val) && i > 0)
             {
                 Serial.println(F("Matches"));
                 Serial.println(wps[i]);
-		Serial.println(F("With Value:\t"));
-		Serial.print(val, DEC);
+                Serial.println(F("With Value:\t"));
+                Serial.print(val, DEC);
                 bed.fadeTime(Timing::Duration::from_millisecs(10));
-		bed.colour(wps[i].cVal());
+                bed.colour(wps[i].cVal());
                 bed.fadeIn();
                 delay(Timing::Duration::from_secs(180).to_millisecs());
                 bed.fadeOut();
@@ -290,7 +299,7 @@ void Edit()
     chosenColour.hex(Serial.readString());
     wp.cVal(chosenColour);
     bed.colour(chosenColour);
-    bed.instant(); 
+    bed.instant();
     Serial.println(F("Edit field: Name (char)"));
     while(Serial.available() < 1)
     {
@@ -304,8 +313,8 @@ void Edit()
     if(serialVerify())
     {
         byte cnt = EEPROM.read(0);
-        wp.save(epv+1);
-        EEPROM.write(0,cnt);
+        wp.save(epv + 1);
+        EEPROM.write(0, cnt);
     }
     else
     {
@@ -368,7 +377,8 @@ void loop()
             Serial.println(F("Not a valid command"));
         }
     }
-    if((StartTime + Timing::Duration::from_millisecs(millis())) >= Timing::Duration::from_secs(30) && !blockrun)
+    if((StartTime + Timing::Duration::from_millisecs(millis())) >= Timing::Duration::from_secs(30)
+            && !blockrun)
     {
         Serial.println(F("Timed out, Run cycle"));
         Run();
