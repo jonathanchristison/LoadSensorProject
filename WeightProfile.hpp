@@ -17,6 +17,7 @@ public:
     void name(char name);
     int maximal();
     int minimum();
+    int deviation(int dev);
     char name();
     void cVal(Colour colour);
     Colour cVal();

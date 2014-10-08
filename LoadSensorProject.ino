@@ -248,17 +248,21 @@ void Run()
     while(true)
     {
         int val = sg.averageValue();
+        int sval = sg.averageValue();
+        WeightProfile* wp;
         Serial.println(val, DEC);
         for(int i = 0; i < wpscnt; i++)
         {
             if(wps[i].match(val) && i > 0)
             {
+                wp = (wps[i+1].deviation(sval) < wps[i].deviation(sval)) ? &wps[i+1] : &wps[i];
+
                 Serial.println(F("Matches"));
-                Serial.println(wps[i]);
+                Serial.println(*wp);
                 Serial.println(F("With Value:\t"));
                 Serial.print(val, DEC);
                 bed.fadeTime(Timing::Duration::from_millisecs(10));
-                bed.colour(wps[i].cVal());
+                bed.colour(wp->cVal());
                 bed.fadeIn();
                 delay(Timing::Duration::from_secs(180).to_millisecs());
                 bed.fadeOut();
