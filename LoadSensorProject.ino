@@ -242,19 +242,21 @@ void Run()
         Serial.println(wps[i]);
     }
 
-    sg.resolution(300);
-    sg.delayBetweenReads(Timing::Duration::from_microsecs(150));
-
     while(true)
     {
+        sg.resolution(200);
+        sg.delayBetweenReads(Timing::Duration::from_microsecs(40));
         int val = sg.averageValue();
-        int sval = sg.averageValue();
         WeightProfile* wp;
         Serial.println(val, DEC);
         for(int i = 0; i < wpscnt; i++)
         {
             if(wps[i].match(val) && i > 0)
             {
+                sg.resolution(300);
+                sg.delayBetweenReads(Timing::Duration::from_microsecs(300));
+                delay(10);
+                int sval = sg.averageValue();
                 wp = (wps[i+1].deviation(sval) < wps[i].deviation(sval)) ? &wps[i+1] : &wps[i];
 
                 Serial.println(F("Matches"));
@@ -264,7 +266,7 @@ void Run()
                 bed.fadeTime(Timing::Duration::from_millisecs(10));
                 bed.colour(wp->cVal());
                 bed.fadeIn();
-                delay(Timing::Duration::from_secs(180).to_millisecs());
+                delay(Timing::Duration::from_secs(5).to_millisecs());
                 bed.fadeOut();
             }
         }
