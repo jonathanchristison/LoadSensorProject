@@ -123,11 +123,11 @@ void Calibrate()
     {
         for(int i = 0; i < 10; i++)
         {
-	 int val = sg.averageValue();
-	        Colour energyc; 
-		energyc = energyc.energy(val);
-		bed.colour(energyc);
-		bed.instant();
+            int val = sg.averageValue();
+            Colour energyc;
+            energyc = energyc.energy(val);
+            bed.colour(energyc);
+            bed.instant();
             average.push(val);
         }
 
@@ -188,22 +188,22 @@ void Show()
     }
 }
 
-void RealTime2() 
-{ 
-Serial.println(F("Real Time 2")); 
-bed.colour(Colour(WHITE)); 
-bed.pulse(3); 
-sg.resolution(4); 
-sg.delayBetweenReads(Timing::Duration::from_millisecs(16)); 
-const Timing::Duration st = Timing::Duration::from_millisecs(millis()); 
-const Timing::Duration duration(60, 0); 
+void RealTime2()
+{
+    Serial.println(F("Real Time 2"));
+    bed.colour(Colour(WHITE));
+    bed.pulse(3);
+    sg.resolution(4);
+    sg.delayBetweenReads(Timing::Duration::from_millisecs(16));
+    const Timing::Duration st = Timing::Duration::from_millisecs(millis());
+    const Timing::Duration duration(60, 0);
 
-do 
-{ 
-Serial.println(sg.averageValue()); 
-} 
-while(st +  duration > Timing::Duration::from_millisecs(millis())); 
-} 
+    do
+    {
+        Serial.println(sg.averageValue());
+    }
+    while(st +  duration > Timing::Duration::from_millisecs(millis()));
+}
 
 void RealTime()
 {
@@ -271,7 +271,7 @@ void Run()
         int val = sg.averageValue();
         WeightProfile* wp;
         Serial.println(val, DEC);
-        
+
         if(val > wps[0].maximal())
         {
             sg.resolution(10);
@@ -287,17 +287,17 @@ void Run()
                 }
             }
             if(wp->match(sval))
-	    {
-		    Serial.println(F("Matches"));
-		    Serial.println(*wp);
-		    Serial.println(F("With Value:\t"));
-		    Serial.println(sval, DEC);
-		    bed.fadeTime(Timing::Duration::from_millisecs(15));
-		    bed.colour(wp->cVal());
-		    bed.fadeIn();
-		    delay(Timing::Duration::from_secs(150).to_millisecs());
-		    bed.fadeOut();
-	    }
+            {
+                Serial.println(F("Matches"));
+                Serial.println(*wp);
+                Serial.println(F("With Value:\t"));
+                Serial.println(sval, DEC);
+                bed.fadeTime(Timing::Duration::from_millisecs(15));
+                bed.colour(wp->cVal());
+                bed.fadeIn();
+                delay(Timing::Duration::from_secs(150).to_millisecs());
+                bed.fadeOut();
+            }
         }
     }
 }
