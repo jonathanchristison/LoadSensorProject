@@ -13,7 +13,7 @@ bool blockrun = false;
 /** Time of running
     @todo use "Time" rather than "Duration" and use a RTC
 **/
-const Timing::Duration StartTime;
+Timing::Time StartTime;
 
 /** LED and Strain devices **/
 AnalogInputDevice::Strain sg(A0);
@@ -29,9 +29,9 @@ void setup()
     inputString.reserve(30);
     Serial.println(F("Starting up..."));
     Serial.println(F("Usage:"));
-    Serial.println(F("\tRESET\n\tCalibrate\n\tEDIT\n\tRUN\n\tShow\n\tREALTIME"));
+    Serial.println(F("\tRESET\n\tCalibrate\n\tEDIT\n\tRUN\n\tShow\n\tREALTIME\n\tREALTIME2"));
 
-    StartTime.from_millisecs(millis());
+    //StartTime.from_millisecs(millis());
 }
 
 
@@ -115,7 +115,7 @@ void Calibrate()
     }
     delay(Timing::Duration::from_secs(10).to_millisecs());
     Serial.println(F("Stand on the load sensor for 5 seconds"));
-    Average<uint16_t> average(50);
+    Average<uint16_t> average(10);
 
     Timing::Duration standtime;
     standtime = Timing::Duration::from_millisecs(millis());
@@ -123,7 +123,12 @@ void Calibrate()
     {
         for(int i = 0; i < 10; i++)
         {
-            average.push(sg.averageValue());
+	 int val = sg.averageValue();
+	        Colour energyc; 
+		energyc = energyc.energy(val);
+		bed.colour(energyc);
+		bed.instant();
+            average.push(val);
         }
 
         delay(Timing::Duration::from_secs(1).to_millisecs());
@@ -183,13 +188,30 @@ void Show()
     }
 }
 
+void RealTime2() 
+{ 
+Serial.println(F("Real Time 2")); 
+bed.colour(Colour(WHITE)); 
+bed.pulse(3); 
+sg.resolution(4); 
+sg.delayBetweenReads(Timing::Duration::from_millisecs(16)); 
+const Timing::Duration st = Timing::Duration::from_millisecs(millis()); 
+const Timing::Duration duration(60, 0); 
+
+do 
+{ 
+Serial.println(sg.averageValue()); 
+} 
+while(st +  duration > Timing::Duration::from_millisecs(millis())); 
+} 
+
 void RealTime()
 {
     Serial.println(F("Real Time"));
     bed.colour(Colour(WHITE));
     bed.pulse(3);
-    sg.resolution(10);
-    sg.delayBetweenReads(Timing::Duration::zero());
+    sg.resolution(4);
+    sg.delayBetweenReads(Timing::Duration::from_millisecs(16));
 
     const Timing::Duration st = Timing::Duration::from_millisecs(millis());
     const Timing::Duration duration(60, 0);
@@ -201,7 +223,6 @@ void RealTime()
         energyc = energyc.energy(val);
         bed.colour(energyc);
         bed.instant();
-        delay(1);
         if(i > 50)
         {
             Serial.println(val, DEC);
@@ -213,6 +234,7 @@ void RealTime()
         i++;
     }
     while(st +  duration > Timing::Duration::from_millisecs(millis()));
+    bed.colour(Colour(OFF));
 }
 
 void Run()
@@ -244,31 +266,38 @@ void Run()
 
     while(true)
     {
-        sg.resolution(200);
-        sg.delayBetweenReads(Timing::Duration::from_microsecs(40));
+        sg.resolution(4);
+        sg.delayBetweenReads(Timing::Duration::from_millisecs(16));
         int val = sg.averageValue();
         WeightProfile* wp;
         Serial.println(val, DEC);
-        for(int i = 0; i < wpscnt; i++)
+        
+        if(val > wps[0].maximal())
         {
-            if(wps[i].match(val) && i > 0)
+            sg.resolution(10);
+            sg.delayBetweenReads(Timing::Duration::from_millisecs(145));
+            int sval = sg.peakValueAverage();
+            unsigned int ldev = 0xffff;
+            for(int i = 1; i < wpscnt; i++)
             {
-                sg.resolution(300);
-                sg.delayBetweenReads(Timing::Duration::from_microsecs(300));
-                delay(10);
-                int sval = sg.averageValue();
-                wp = (wps[i+1].deviation(sval) < wps[i].deviation(sval)) ? &wps[i+1] : &wps[i];
-
-                Serial.println(F("Matches"));
-                Serial.println(*wp);
-                Serial.println(F("With Value:\t"));
-                Serial.print(val, DEC);
-                bed.fadeTime(Timing::Duration::from_millisecs(10));
-                bed.colour(wp->cVal());
-                bed.fadeIn();
-                delay(Timing::Duration::from_secs(5).to_millisecs());
-                bed.fadeOut();
+                if(wps[i].deviation(sval) < ldev)
+                {
+                    wp = &wps[i];
+                    ldev = wp->deviation(sval);
+                }
             }
+            if(wp->match(sval))
+	    {
+		    Serial.println(F("Matches"));
+		    Serial.println(*wp);
+		    Serial.println(F("With Value:\t"));
+		    Serial.println(sval, DEC);
+		    bed.fadeTime(Timing::Duration::from_millisecs(15));
+		    bed.colour(wp->cVal());
+		    bed.fadeIn();
+		    delay(Timing::Duration::from_secs(150).to_millisecs());
+		    bed.fadeOut();
+	    }
         }
     }
 }
@@ -369,6 +398,13 @@ void loop()
             RealTime();
             blockrun = true;
         }
+        else if(inputString == "REALTIME2\r\n")
+        {
+            inputString = "";
+            stringComplete = false;
+            RealTime2();
+            blockrun = true;
+        }
         else if(inputString == "EDIT\r\n")
         {
             inputString = "";
@@ -383,7 +419,7 @@ void loop()
             Serial.println(F("Not a valid command"));
         }
     }
-    if((StartTime + Timing::Duration::from_millisecs(millis())) >= Timing::Duration::from_secs(30)
+    if(StartTime  >= Timing::Duration::from_secs(30)
             && !blockrun)
     {
         Serial.println(F("Timed out, Run cycle"));

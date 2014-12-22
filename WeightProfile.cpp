@@ -61,7 +61,7 @@ char WeightProfile::name()
     return name_;
 }
 
-int WeightProfile::deviation(int dev)
+unsigned int WeightProfile::deviation(int dev)
 {
     int mean = (this->maximal() + this->minimum()) / 2;
     return mean > dev ? mean - dev : dev - mean;
